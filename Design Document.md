@@ -31,8 +31,8 @@ The system consists of a Spring Boot WebSocket server and a multithreaded Java c
 │  │ Config        │───>│ Handler      │───>│  Validator       │  │
 │  │ /chat/{room}  │    │ (core)       │    │  (stateless)     │  │
 │  └───────────────┘    └──────┬───────┘    └──────────────────┘  │
-│                             │                                   │
-│  ┌──────────────┐    ┌──────┴───────┐    ┌───────────────────┐  │
+│                              │                                  │
+│  ┌──────────────┐    ┌───────┴──────┐    ┌───────────────────┐  │
 │  │ Health       │    │ RoomSession  │    │  ServerResponse   │  │
 │  │ Controller   │    │ Manager      │    │  echo + timestamp │  │
 │  │ GET /health  │    │ ConcurrentMap│    │                   │  │
@@ -43,12 +43,12 @@ The system consists of a Spring Boot WebSocket server and a multithreaded Java c
 ```mermaid
 graph TB
     subgraph Client["Client (Java)"]
-        MG["MessageGenerator\n(1 thread)"]
-        BQ[/"ArrayBlockingQueue\n(cap: 10K)"/]
-        MS["MessageSender × N\n(sync send-ack)"]
-        CM["ConnectionManager\nconnect / reconnect"]
-        RH["RetryHandler\nexp backoff × 5"]
-        BM["BasicMetrics\nAtomicLong counters"]
+        MG["MessageGenerator<br/>(1 thread)"]
+        BQ[/"ArrayBlockingQueue<br/>(cap: 10K)"/]
+        MS["MessageSender × N<br/>(sync send-ack)"]
+        CM["ConnectionManager<br/>connect / reconnect"]
+        RH["RetryHandler<br/>exp backoff × 5"]
+        BM["BasicMetrics<br/>AtomicLong counters"]
 
         MG -->|"queue.put()"| BQ
         BQ -->|"queue.poll()"| MS
@@ -58,14 +58,14 @@ graph TB
     end
 
     subgraph Server["Server (Spring Boot :8080)"]
-        WC["WebSocketConfig\n/chat/{roomId}"] --> Handler["ChatWebSocketHandler"]
-        Handler --> MV["MessageValidator\n(stateless)"]
-        Handler --> RSM["RoomSessionManager\nConcurrentHashMap"]
-        Handler --> SR["ServerResponse\necho + timestamp"]
-        HC["HealthController\nGET /health"]
+        WC["WebSocketConfig<br/>/chat/{roomId}"] --> Handler["ChatWebSocketHandler"]
+        Handler --> MV["MessageValidator<br/>(stateless)"]
+        Handler --> RSM["RoomSessionManager<br/>ConcurrentHashMap"]
+        Handler --> SR["ServerResponse<br/>echo + timestamp"]
+        HC["HealthController<br/>GET /health"]
     end
 
-    MS -->|"WebSocket\nsend → wait ack → next"| Handler
+    MS -->|"WebSocket<br/>send → wait ack → next"| Handler
 
     subgraph Phases["Execution Phases"]
         W["Warmup: 32 threads × 1000 msgs"]
