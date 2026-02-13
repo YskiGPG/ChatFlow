@@ -4,42 +4,6 @@
 
 The system consists of a Spring Boot WebSocket server and a multithreaded Java client following a producer-consumer pattern.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENT                                   │
-│                                                                 │
-│  ┌──────────────┐     ┌──────────────┐    ┌──────────────────┐  │
-│  │  Message     │     │ ArrayBlocking│    │  MessageSender   │  │
-│  │  Generator   │────>│ Queue        │───>│  × N threads     │  │
-│  │  (1 thread)  │     │ (cap: 10K)   │    │  (1 conn each)   │  │
-│  └──────────────┘     └──────────────┘    └────────┬─────────┘  │
-│                                                    │            │
-│  ┌───────────────┐  ┌──────────────┐  ┌────────────┴──────────┐ │
-│  │ BasicMetrics  │  │ RetryHandler │  │ ConnectionManager     │ │
-│  │ AtomicLong    │  │ exp backoff  │  │ connect / reconnect   │ │
-│  └───────────────┘  └──────────────┘  └───────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                    WebSocket (persistent)
-                    ws://host:8080/chat/{roomId}
-                              │
-┌─────────────────────────────────────────────────────────────────┐
-│                        SERVER (Spring Boot)                     │
-│                                                                 │
-│  ┌───────────────┐    ┌──────────────┐    ┌──────────────────┐  │
-│  │ WebSocket     │    │ ChatWebSocket│    │  Message         │  │
-│  │ Config        │───>│ Handler      │───>│  Validator       │  │
-│  │ /chat/{room}  │    │ (core)       │    │  (stateless)     │  │
-│  └───────────────┘    └──────┬───────┘    └──────────────────┘  │
-│                              │                                  │
-│  ┌──────────────┐    ┌───────┴──────┐    ┌───────────────────┐  │
-│  │ Health       │    │ RoomSession  │    │  ServerResponse   │  │
-│  │ Controller   │    │ Manager      │    │  echo + timestamp │  │
-│  │ GET /health  │    │ ConcurrentMap│    │                   │  │
-│  └──────────────┘    └──────────────┘    └───────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
 ```mermaid
 graph TB
     subgraph Client["Client (Java)"]
