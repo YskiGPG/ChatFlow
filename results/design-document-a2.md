@@ -163,9 +163,9 @@ Consumer threads pull from the Server's exclusive queue. On each message, they l
 
 ### Client Output (1 Server)
 
-![1](/Users/yski/Desktop/chatflow/results/images/1.png)
+![1](images/1.png)
 
-![1](/Users/yski/Desktop/chatflow/results/images/2.png)
+![1](images/2.png)
 
 | Phase               | Messages    | Throughput      | Connections | Reconnections |
 | ------------------- | ----------- | --------------- | ----------- | ------------- |
@@ -175,13 +175,13 @@ Consumer threads pull from the Server's exclusive queue. On each message, they l
 
 ### RabbitMQ Management Console
 
-![1](/Users/yski/Desktop/chatflow/results/images/3.png)
+![1](images/3.png)
 
 - **Queue depth**: Stable at 0 (consumers keeping up with producers — good plateau profile)
 - **Message rates**: Publish and consume rates balanced at 0.00/s post-test
 - **Global counts**: 4 connections, 84 channels, 4 queues, 4 consumers
 
-![1](/Users/yski/Desktop/chatflow/results/images/4.png)
+![1](images/4.png)
 
 - 4 exclusive queues (one per server instance): `server.server-1.queue` through `server.server-4.queue`
 - All queues in running state with 0 messages ready/unacked — no message buildup
@@ -190,9 +190,9 @@ Consumer threads pull from the Server's exclusive queue. On each message, they l
 
 ### Client Output (2 Servers)
 
-![1](/Users/yski/Desktop/chatflow/results/images/5.png)
+![1](images/5.png)
 
-![1](/Users/yski/Desktop/chatflow/results/images/6.png)
+![1](images/6.png)
 
 | Phase               | Messages    | Throughput      | Connections | Reconnections |
 | ------------------- | ----------- | --------------- | ----------- | ------------- |
@@ -202,9 +202,9 @@ Consumer threads pull from the Server's exclusive queue. On each message, they l
 
 ### Client Output (4 Servers)
 
-![1](/Users/yski/Desktop/chatflow/results/images/7.png)
+![1](images/7.png)
 
-![1](/Users/yski/Desktop/chatflow/results/images/8.png)
+![1](images/8.png)
 
 | Phase               | Messages    | Throughput      | Connections | Reconnections |
 | ------------------- | ----------- | --------------- | ----------- | ------------- |
@@ -214,13 +214,13 @@ Consumer threads pull from the Server's exclusive queue. On each message, they l
 
 ### ALB Metrics
 
-![1](/Users/yski/Desktop/chatflow/results/images/9.png)
+![1](images/9.png)
 
 The three peaks in the Request Count chart correspond to the three test runs (1, 2, and 4 servers). Target Response Time peaked at 11.1 seconds during the single-server test, then dropped significantly with 2 and 4 servers, confirming load distribution is effective.
 
 ### EC2 Instances
 
-![1](/Users/yski/Desktop/chatflow/results/images/10.png)
+![1](images/10.png)
 
 5 instances running: 1 RabbitMQ + 4 server-v2 instances, all t2.micro in us-west-2.
 
