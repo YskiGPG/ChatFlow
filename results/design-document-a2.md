@@ -163,9 +163,9 @@ Consumer threads pull from the Server's exclusive queue. On each message, they l
 
 ### Client Output (1 Server)
 
-![image-20260307234812824](/Users/yski/Library/Application Support/typora-user-images/image-20260307234812824.png)
+![1](/Users/yski/Desktop/chatflow/results/images/1.png)
 
-![image-20260307235222902](/Users/yski/Library/Application Support/typora-user-images/image-20260307235222902.png)
+![1](/Users/yski/Desktop/chatflow/results/images/2.png)
 
 | Phase               | Messages    | Throughput      | Connections | Reconnections |
 | ------------------- | ----------- | --------------- | ----------- | ------------- |
@@ -175,13 +175,13 @@ Consumer threads pull from the Server's exclusive queue. On each message, they l
 
 ### RabbitMQ Management Console
 
-![image-20260307234404403](/Users/yski/Library/Application Support/typora-user-images/image-20260307234404403.png)
+![1](/Users/yski/Desktop/chatflow/results/images/3.png)
 
 - **Queue depth**: Stable at 0 (consumers keeping up with producers — good plateau profile)
 - **Message rates**: Publish and consume rates balanced at 0.00/s post-test
 - **Global counts**: 4 connections, 84 channels, 4 queues, 4 consumers
 
-![image-20260307234408719](/Users/yski/Library/Application Support/typora-user-images/image-20260307234408719.png)
+![1](/Users/yski/Desktop/chatflow/results/images/4.png)
 
 - 4 exclusive queues (one per server instance): `server.server-1.queue` through `server.server-4.queue`
 - All queues in running state with 0 messages ready/unacked — no message buildup
@@ -190,9 +190,9 @@ Consumer threads pull from the Server's exclusive queue. On each message, they l
 
 ### Client Output (2 Servers)
 
-![image-20260307235350409](/Users/yski/Library/Application Support/typora-user-images/image-20260307235350409.png)
+![1](/Users/yski/Desktop/chatflow/results/images/5.png)
 
-![image-20260307235401955](/Users/yski/Library/Application Support/typora-user-images/image-20260307235401955.png)
+![1](/Users/yski/Desktop/chatflow/results/images/6.png)
 
 | Phase               | Messages    | Throughput      | Connections | Reconnections |
 | ------------------- | ----------- | --------------- | ----------- | ------------- |
@@ -202,9 +202,9 @@ Consumer threads pull from the Server's exclusive queue. On each message, they l
 
 ### Client Output (4 Servers)
 
-![image-20260307235416786](/Users/yski/Library/Application Support/typora-user-images/image-20260307235416786.png)
+![1](/Users/yski/Desktop/chatflow/results/images/7.png)
 
-![image-20260307235430961](/Users/yski/Library/Application Support/typora-user-images/image-20260307235430961.png)
+![1](/Users/yski/Desktop/chatflow/results/images/8.png)
 
 | Phase               | Messages    | Throughput      | Connections | Reconnections |
 | ------------------- | ----------- | --------------- | ----------- | ------------- |
@@ -214,13 +214,13 @@ Consumer threads pull from the Server's exclusive queue. On each message, they l
 
 ### ALB Metrics
 
-![image-20260307234419746](/Users/yski/Library/Application Support/typora-user-images/image-20260307234419746.png)
+![1](/Users/yski/Desktop/chatflow/results/images/9.png)
 
 The three peaks in the Request Count chart correspond to the three test runs (1, 2, and 4 servers). Target Response Time peaked at 11.1 seconds during the single-server test, then dropped significantly with 2 and 4 servers, confirming load distribution is effective.
 
 ### EC2 Instances
 
-![image-20260307235509654](/Users/yski/Library/Application Support/typora-user-images/image-20260307235509654.png)
+![1](/Users/yski/Desktop/chatflow/results/images/10.png)
 
 5 instances running: 1 RabbitMQ + 4 server-v2 instances, all t2.micro in us-west-2.
 
