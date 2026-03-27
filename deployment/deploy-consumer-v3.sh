@@ -32,8 +32,8 @@ ssh -i "$PEM_FILE" "ec2-user@${EC2_IP}" << REMOTE
     sleep 2
 
     nohup java -jar consumer-v3.jar \
-        ${RABBITMQ_IP} \
-        ${MYSQL_IP} \
+        rabbitmq.host=${RABBITMQ_IP} \
+        mysql.host=${MYSQL_IP} \
         > consumer.log 2>&1 &
 
     sleep 3
