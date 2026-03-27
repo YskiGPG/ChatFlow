@@ -58,7 +58,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             chatMessage = gson.fromJson(payload, ChatMessage.class);
         } catch (JsonSyntaxException e) {
             ServerResponse errorResponse = ServerResponse.error("Invalid JSON format");
-            session.sendMessage(new TextMessage(gson.toJson(errorResponse)));
+            synchronized (session) {
+                session.sendMessage(new TextMessage(gson.toJson(errorResponse)));
+            }
             return;
         }
 
@@ -66,7 +68,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         ValidationResult result = validator.validate(chatMessage);
         if (!result.isValid()) {
             ServerResponse errorResponse = ServerResponse.error(result.getErrorMessage());
-            session.sendMessage(new TextMessage(gson.toJson(errorResponse)));
+            synchronized (session) {
+                session.sendMessage(new TextMessage(gson.toJson(errorResponse)));
+            }
             return;
         }
 
@@ -81,13 +85,17 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         } catch (Exception e) {
             log.error("Failed to publish to RabbitMQ: {}", e.getMessage());
             ServerResponse errorResponse = ServerResponse.error("Server error: message not delivered");
-            session.sendMessage(new TextMessage(gson.toJson(errorResponse)));
+            synchronized (session) {
+                session.sendMessage(new TextMessage(gson.toJson(errorResponse)));
+            }
             return;
         }
 
         // Ack to sender
         ServerResponse successResponse = ServerResponse.success(chatMessage, Instant.now().toString());
-        session.sendMessage(new TextMessage(gson.toJson(successResponse)));
+        synchronized (session) {
+            session.sendMessage(new TextMessage(gson.toJson(successResponse)));
+        }
     }
 
     @Override

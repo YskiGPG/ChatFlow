@@ -6,7 +6,7 @@ public class ClientConfig {
     public static int TOTAL_MESSAGES = 500_000;
     public static final int WARMUP_THREADS = 32;
     public static final int WARMUP_MESSAGES_PER_THREAD = 1000;
-    public static final int MAIN_PHASE_THREADS = 64; // tunable
+    public static final int MAIN_PHASE_THREADS = 32; // tunable
     public static final int QUEUE_CAPACITY = 10_000;
     public static final int MAX_RETRIES = 5;
     public static final int NUM_ROOMS = 20;
