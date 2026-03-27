@@ -1,165 +1,108 @@
 # ChatFlow - Distributed Chat System
 
-CS6650 Assignment 1: WebSocket Chat Server and Multithreaded Client
+CS6650 Assignments 1–3: WebSocket Chat Server, RabbitMQ Message Pipeline, and MySQL Persistence
+
+## Architecture
+
+```
+Client (local) → Server-v3 (EC2-1) → RabbitMQ (EC2-1) → Consumer-v3 (EC2-2) → MySQL (EC2-2)
+                      ↑                                                            ↑
+                      └── Metrics API reads from ──────────────────────────────────┘
+```
 
 ## Prerequisites
 
 - Java 17+
 - Maven 3.8+
-  title: ChatFlow Architecture
----
+- RabbitMQ 3.x (on server host)
+- MySQL 8.0 (on consumer host)
 
-```mermaid
-    ---
-title: ChatFlow Architecture
----
-
-graph TB
-%% =========================
-%% Server
-%% =========================
-subgraph Server["Server Module (Spring Boot :8080)"]
-WC[WebSocketConfig<br/>/chat/roomId] --> Handler[ChatWebSocketHandler]
-Handler --> Validator[MessageValidator]
-Handler --> RSM[RoomSessionManager<br/>ConcurrentHashMap&lt;roomId, Set&lt;Session&gt;&gt;]
-Handler --> Response[ServerResponse<br/>echo + serverTimestamp]
-HC[HealthController<br/>GET /health]
-end
-
-%% =========================
-%% Client
-%% =========================
-subgraph Client["Client Module"]
-subgraph Producer["Producer (1 thread)"]
-MG[MessageGenerator<br/>500K messages<br/>50 msg pool / 20 rooms<br/>90% TEXT 5% JOIN 5% LEAVE]
-end
-
-BQ[/"ArrayBlockingQueue<br/>(capacity: 10K)"/]
-
-subgraph Consumers["Consumers (N threads)"]
-MS1[MessageSender #1]
-MS2[MessageSender #2]
-MSN[MessageSender #N]
-end
-
-subgraph Support["Support Components"]
-CM[ConnectionManager<br/>connect / reconnect]
-RH[RetryHandler<br/>exponential backoff x5]
-BM[BasicMetrics<br/>AtomicLong counters]
-end
-
-%% Producer -> Queue
-MG -->|"queue.put()"| BQ
-
-%% Queue -> Consumers
-BQ -->|"queue.poll()"| MS1
-BQ --> MS2
-BQ --> MSN
-
-%% Sender internal deps
-MS1 --> CM
-MS1 --> RH
-MS1 --> BM
-end
-
-%% =========================
-%% WebSocket Interaction
-%% =========================
-MS1 -->|"WebSocket<br/>send → wait ack → next"| Handler
-MS2 -->|"WebSocket"| Handler
-MSN -->|"WebSocket"| Handler
-
-```
-
-```mermaid
-graph TB
-
-    subgraph Phases["Execution Phases"]
-        W["Warmup Phase<br/>32 threads × 1000 msgs"]
-        M["Main Phase<br/>128 threads × ~3656 msgs"]
-    end
-
-    subgraph LittlesLaw["Little's Law: λ = L / W"]
-        LL["L = 128 threads<br/>W = ~5ms RTT<br/><br/>λ = 128 / 0.005<br/>= 25,600 msg/sec<br/><br/>500K msgs ≈ 20 sec"]
-    end
-
-    W --> M
-    M --> LL
-
-```
-
-```
-chatflow/
-├── server/          # Spring Boot WebSocket server
-├── client-part1/    # Basic load testing client
-├── client-part2/    # Client with performance analysis
-└── results/         # Test results and analysis
-```
-
-## 
 ## Project Structure
 
 ```
 chatflow/
-├── server/          # Spring Boot WebSocket server
-├── client-part1/    # Basic load testing client
-├── client-part2/    # Client with performance analysis
-└── results/         # Test results and analysis
+├── server/          # A1: Spring Boot WebSocket server
+├── server-v2/       # A2: Server + RabbitMQ publishing
+├── server-v3/       # A3: Server + RabbitMQ + Metrics REST API (MySQL read)
+├── consumer/        # A2: RabbitMQ consumer (in-memory)
+├── consumer-v3/     # A3: RabbitMQ consumer + MySQL batch writes
+├── client-part1/    # A1: Basic load testing client
+├── client-part2/    # A2/A3: Client with latency analysis + Metrics API caller
+├── database/        # A3: MySQL schema and setup scripts
+└── results/         # Test results, charts, reports
 ```
 
 ## Build
 
 ```bash
 # Build all modules
-mvn clean package
+mvn clean package -DskipTests
 
 # Build specific module
-mvn clean package -pl server
+mvn clean package -pl server-v3 -DskipTests
 ```
+
+## Database Setup (EC2-2)
+
+```bash
+# Run the setup script on the MySQL host
+cd database
+chmod +x setup.sh
+./setup.sh
+```
+
+This creates the `chatflow` database, `messages` table, and indexes. See `database/schema.sql` for the full schema.
 
 ## Run
 
-### Server
+### Server-v3 (EC2-1)
 
 ```bash
-cd server
-mvn spring-boot:run
-# Or after packaging:
-java -jar target/server-1.0-SNAPSHOT.jar
+java -Xmx512m -jar server-v3-1.0-SNAPSHOT.jar \
+  --spring.config.location=./application.properties
 ```
 
 Server starts on port 8080:
-- WebSocket: `ws://localhost:8080/chat/{roomId}`
-- Health check: `http://localhost:8080/health`
+- WebSocket: `ws://<host>:8080/chat/{roomId}`
+- Health check: `http://<host>:8080/health`
+- Metrics API: `http://<host>:8080/api/metrics/...`
 
-### Client Part 1
-
-```bash
-# Make sure server is running first
-cd client-part1
-mvn exec:java -Dexec.mainClass="com.chatflow.client.ClientApp"
-# Or after packaging:
-java -jar target/client-part1-1.0-SNAPSHOT.jar
-```
-
-### Client Part 2
+### Consumer-v3 (EC2-2)
 
 ```bash
-cd client-part2
-java -jar target/client-part2-1.0-SNAPSHOT.jar
+java -jar consumer-v3-1.0-SNAPSHOT.jar \
+  rabbitmq.host=<EC2-1-private-ip> rabbitmq.username=admin rabbitmq.password=admin123 \
+  mysql.host=localhost mysql.port=3306 mysql.database=chatflow \
+  mysql.username=chatflow mysql.password=chatflow123 \
+  batch.size=1000 flush.interval.ms=500 consumer.threads=10 writer.threads=4
 ```
 
-## Test
+### Client (local)
 
 ```bash
-# Run all tests
-mvn test
+# 500K message test
+java -jar client-part2/target/client-part2-1.0-SNAPSHOT.jar \
+  500000 "ws://<server-ip>:8080/chat/" "http://<server-ip>:8080"
 
-# Run tests for specific module
-mvn test -pl server
+# 1M stress test
+java -jar client-part2/target/client-part2-1.0-SNAPSHOT.jar \
+  1000000 "ws://<server-ip>:8080/chat/" "http://<server-ip>:8080"
 ```
 
-## Quick Verify with wscat
+## Metrics API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/metrics/rooms/{roomId}/messages?start=&end=` | Messages in a room within time range |
+| `GET /api/metrics/users/{userId}/messages?start=&end=` | Messages by a user within time range |
+| `GET /api/metrics/active-users?start=&end=` | Count of distinct active users |
+| `GET /api/metrics/users/{userId}/rooms` | Rooms a user has participated in |
+| `GET /api/metrics/analytics/throughput` | Per-minute message throughput (last 60 min) |
+| `GET /api/metrics/analytics/top-users?n=N` | Top N users by message count |
+| `GET /api/metrics/analytics/top-rooms?n=N` | Top N rooms by message count |
+| `GET /api/metrics/analytics/user-patterns` | User behavior patterns |
+
+## Quick Verify
 
 ```bash
 # Install wscat
