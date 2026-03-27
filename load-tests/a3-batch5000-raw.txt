@@ -1,6 +1,6 @@
 ChatFlow Load Test Client - Part 2 (with latency analysis)
 ===========================================================
-[Batch tuning test: batch.size=500, flush.interval.ms=500]
+[Batch tuning test: batch.size=5000, flush.interval.ms=500]
 Total messages: 500000
 Warmup: 32 threads, 32000 messages total
 Main phase: 32 threads, 468000 messages
@@ -15,8 +15,8 @@ Warmup phase complete.
 ========================================
 Successful messages: 32000
 Failed messages:     0
-Total runtime:       12.87 seconds
-Throughput:          2486.40 messages/sec
+Total runtime:       12.58 seconds
+Throughput:          2543.72 messages/sec
 Total connections:   32
 Reconnections:       0
 ========================================
@@ -28,8 +28,8 @@ Main phase complete.
 ========================================
 Successful messages: 468000
 Failed messages:     0
-Total runtime:       117.42 seconds
-Throughput:          3985.27 messages/sec
+Total runtime:       116.18 seconds
+Throughput:          4027.37 messages/sec
 Total connections:   32
 Reconnections:       0
 ========================================
@@ -37,19 +37,19 @@ Reconnections:       0
 ========= OVERALL =========
 Total successful: 500000
 Total failed:     0
-Total time:       130.30 seconds
-Overall throughput: 3836.53 msg/sec
+Total time:       128.77 seconds
+Overall throughput: 3882.89 msg/sec
 
 ==========================================
        DETAILED PERFORMANCE REPORT
 ==========================================
 Total messages:       500000
-Mean response time:   7.04 ms
+Mean response time:   6.91 ms
 Median response time: 5 ms
 95th percentile:      19 ms
-99th percentile:      41 ms
+99th percentile:      40 ms
 Min response time:    0 ms
-Max response time:    438 ms
+Max response time:    435 ms
 
 Message Type Distribution:
   TEXT     449841  (90.0%)
@@ -57,26 +57,26 @@ Message Type Distribution:
   LEAVE     25078  (5.0%)
 
 Throughput per Room:
-  Room 1    31250 msgs  295 msg/sec
-  Room 2    31250 msgs  293 msg/sec
-  Room 3    31250 msgs  296 msg/sec
-  Room 4    31250 msgs  292 msg/sec
-  Room 5    31250 msgs  294 msg/sec
-  Room 6    31250 msgs  291 msg/sec
-  Room 7    31250 msgs  295 msg/sec
-  Room 8    31250 msgs  271 msg/sec
-  Room 9    31250 msgs  293 msg/sec
-  Room 10   31250 msgs  292 msg/sec
-  Room 11   31250 msgs  294 msg/sec
-  Room 12   31250 msgs  273 msg/sec
-  Room 13   15625 msgs  127 msg/sec
-  Room 14   15625 msgs  128 msg/sec
-  Room 15   15625 msgs  126 msg/sec
-  Room 16   15625 msgs  127 msg/sec
-  Room 17   15625 msgs  128 msg/sec
-  Room 18   15625 msgs  127 msg/sec
-  Room 19   15625 msgs  126 msg/sec
-  Room 20   15625 msgs  125 msg/sec
+  Room 1    31250 msgs  300 msg/sec
+  Room 2    31250 msgs  299 msg/sec
+  Room 3    31250 msgs  301 msg/sec
+  Room 4    31250 msgs  297 msg/sec
+  Room 5    31250 msgs  300 msg/sec
+  Room 6    31250 msgs  296 msg/sec
+  Room 7    31250 msgs  300 msg/sec
+  Room 8    31250 msgs  275 msg/sec
+  Room 9    31250 msgs  298 msg/sec
+  Room 10   31250 msgs  297 msg/sec
+  Room 11   31250 msgs  299 msg/sec
+  Room 12   31250 msgs  277 msg/sec
+  Room 13   15625 msgs  130 msg/sec
+  Room 14   15625 msgs  131 msg/sec
+  Room 15   15625 msgs  129 msg/sec
+  Room 16   15625 msgs  130 msg/sec
+  Room 17   15625 msgs  131 msg/sec
+  Room 18   15625 msgs  130 msg/sec
+  Room 19   15625 msgs  129 msg/sec
+  Room 20   15625 msgs  128 msg/sec
 ==========================================
 CSV exported to: results/latency_data.csv
 Chart saved to: results/throughput_chart.png

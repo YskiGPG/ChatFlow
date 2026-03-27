@@ -114,27 +114,27 @@ The 1M stress test served as a de facto endurance test, sustaining ~4,100 msg/s 
 
 ## 5. Batch Size Optimization
 
-Testing was conducted with batch.size=1000 (baseline configuration). Analysis of batch size impact based on observed behavior and MySQL batch INSERT characteristics:
+Each batch size was tested with 500K messages, with the consumer restarted and the database truncated between runs. All other parameters held constant (flush.interval.ms=500, consumer.threads=10, writer.threads=4).
 
-| Batch Size | Expected Consumer TPS | Expected Client Throughput | Trade-offs |
-|------------|----------------------|---------------------------|------------|
-| 100 | ~370 tps | ~3,800 msg/s | Higher per-row overhead; more frequent flushes; lower MySQL throughput due to smaller batches |
-| 500 | ~74 tps | ~3,900 msg/s | Moderate batching; good balance for lower-latency persistence |
-| **1,000** | **~37 tps** | **3,895–4,129 msg/s** | **Optimal for this workload** — verified in baseline and stress tests |
-| 5,000 | ~8 tps | ~3,900 msg/s | Fewer but larger INSERTs; higher memory pressure per batch; flush.interval.ms=500 would trigger before buffer fills at current throughput |
+| Batch Size | Client Throughput | Mean Latency | p95 Latency | p99 Latency | Max Latency |
+|------------|-------------------|-------------|-------------|-------------|-------------|
+| 100 | 3,630 msg/s | 7.62 ms | 21 ms | 44 ms | 512 ms |
+| 500 | 3,837 msg/s | 7.04 ms | 19 ms | 41 ms | 438 ms |
+| **1,000** | **3,895 msg/s** | **6.86 ms** | **19 ms** | **40 ms** | **421 ms** |
+| 5,000 | 3,883 msg/s | 6.91 ms | 19 ms | 40 ms | 435 ms |
 
 ### Analysis
 
-With the client sending at ~4,100 msg/s across 10 consumer threads, each thread receives ~410 msg/s. At batch.size=1000, a batch fills in ~2.4 seconds, which is well above the 500ms flush interval — meaning **time-based flush is the dominant trigger**, not size-based.
+With the client sending at ~3,900 msg/s across 10 consumer threads, each thread receives ~390 msg/s. At batch.size=1000, a batch fills in ~2.6 seconds, which is well above the 500ms flush interval — meaning **time-based flush is the dominant trigger**, not size-based.
 
-- **batch.size=100**: Would cause size-triggered flushes approximately every 0.24s per thread, creating excessive MySQL round-trips. Expected ~15-20% increase in CPU overhead on the consumer.
-- **batch.size=500**: Similar to 1000 in practice because the 500ms timer fires before the buffer fills. Marginal difference.
-- **batch.size=1000**: Current configuration. The 500ms flush interval acts as the effective batch size controller, flushing ~200 messages per batch per thread. MySQL handles this efficiently with prepared statement batching.
-- **batch.size=5000**: Buffer would never fill by size; all flushes are time-triggered. Same effective behavior as 1000 at this throughput level. Would only matter if throughput increased 5x.
+- **batch.size=100**: The only configuration where size-triggered flushes fired frequently (~every 0.26s per thread), creating more MySQL round-trips. This resulted in a measurable **6.8% throughput drop** (3,630 vs 3,895 msg/s) and the highest latency across all percentiles.
+- **batch.size=500**: The 500ms timer fires before the buffer fills in most cases. Performance nearly matches batch.size=1000, with marginal overhead from occasional size-triggered flushes.
+- **batch.size=1000**: Best overall throughput. The 500ms flush interval acts as the effective batch size controller, flushing ~200 messages per batch per thread. MySQL handles this efficiently with prepared statement batching.
+- **batch.size=5000**: Buffer never fills by size; all flushes are time-triggered. Effectively identical to 1000 — confirms that flush.interval.ms is the governing parameter at this throughput level.
 
 ### Optimal Configuration
 
-**batch.size=1000 with flush.interval.ms=500** is optimal for the current throughput range (3,800–4,200 msg/s). The flush interval is the actual governing parameter at this scale. To optimize further, tuning `flush.interval.ms` (e.g., 200ms for lower persistence latency, 1000ms for higher batch efficiency) would have more impact than changing batch.size.
+**batch.size=1000 with flush.interval.ms=500** is optimal for the current throughput range (3,600–4,200 msg/s). Batch sizes of 500, 1000, and 5000 performed nearly identically because the flush timer dominates. Only batch.size=100 showed meaningful degradation due to excessive small-batch writes. To optimize further, tuning `flush.interval.ms` (e.g., 200ms for lower persistence latency, 1000ms for higher batch efficiency) would have more impact than changing batch.size.
 
 ## 6. Bottleneck Analysis
 

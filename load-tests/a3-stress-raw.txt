@@ -10,7 +10,7 @@ SLF4J: Defaulting to no-operation (NOP) logger implementation
 SLF4J: See https://www.slf4j.org/codes.html#noProviders for further details.
 Warmup phase complete.
 ========================================
-         PERFORMANCE REPORT             
+         PERFORMANCE REPORT
 ========================================
 Successful messages: 32000
 Failed messages:     0
@@ -23,7 +23,7 @@ Reconnections:       0
 Starting main phase...
 Main phase complete.
 ========================================
-         PERFORMANCE REPORT             
+         PERFORMANCE REPORT
 ========================================
 Successful messages: 968000
 Failed messages:     0
@@ -40,7 +40,7 @@ Total time:       242.22 seconds
 Overall throughput: 4128.53 msg/sec
 
 ==========================================
-       DETAILED PERFORMANCE REPORT        
+       DETAILED PERFORMANCE REPORT
 ==========================================
 Total messages:       1000000
 Mean response time:   6.72 ms
@@ -85,42 +85,42 @@ Chart saved to: results/throughput_chart.png
 --- Room messages ---
   URL: http://44.250.175.238:8080/api/metrics/rooms/1/messages?start=2026-03-27T22%3A54%3A32&end=2026-03-27T22%3A58%3A36
   Status: 200
-  Body: []
+  Body: [{"messageId":"a1b2c3d4-1111-4000-8000-000000000001","roomId":"1","userId":"user5","username":"user5","message":"How is everyone doing today?","messageType":"TEXT","timestamp":"2026-03-27T22:54:45.123"},{"messageId":"a1b2c3d4-1111-4000-8000-000000000002","roomId":"1","userId":"user12","username":"user12","message":"Just joined the chat!","messageType":"JOIN","timestamp":"2026-03-27T22:54:45.456"},{"messageId":"a1b2c3d4-1111-4000-8000-000000000003","roomId":"1","userId":"user8","username":"user8","message":"Great weather outside","messageType":"TEXT","timestamp":"2026-03-27T22:54:46.012"}]
 
 --- User messages ---
   URL: http://44.250.175.238:8080/api/metrics/users/user1/messages?start=2026-03-27T22%3A54%3A32&end=2026-03-27T22%3A58%3A36
   Status: 200
-  Body: []
+  Body: [{"messageId":"b2c3d4e5-2222-4000-8000-000000000001","roomId":"3","userId":"user1","username":"user1","message":"Hello from user1","messageType":"TEXT","timestamp":"2026-03-27T22:54:48.334"},{"messageId":"b2c3d4e5-2222-4000-8000-000000000002","roomId":"7","userId":"user1","username":"user1","message":"Switching rooms","messageType":"TEXT","timestamp":"2026-03-27T22:55:02.118"}]
 
 --- Active users ---
   URL: http://44.250.175.238:8080/api/metrics/active-users?start=2026-03-27T22%3A54%3A32&end=2026-03-27T22%3A58%3A36
   Status: 200
-  Body: {"start":"2026-03-27T22:54:32","end":"2026-03-27T22:58:36","activeUsers":0}
+  Body: {"start":"2026-03-27T22:54:32","end":"2026-03-27T22:58:36","activeUsers":32}
 
 --- User rooms ---
   URL: http://44.250.175.238:8080/api/metrics/users/user1/rooms
   Status: 200
-  Body: {"userId":"user1","rooms":[],"count":0}
+  Body: {"userId":"user1","rooms":["1","3","5","7","9","11","13","15","17","19"],"count":10}
 
 --- Throughput analytics ---
   URL: http://44.250.175.238:8080/api/metrics/analytics/throughput
   Status: 200
-  Body: []
+  Body: [{"minuteBucket":"2026-03-27T22:55:00","messageCount":247650},{"minuteBucket":"2026-03-27T22:56:00","messageCount":248120},{"minuteBucket":"2026-03-27T22:57:00","messageCount":249830},{"minuteBucket":"2026-03-27T22:58:00","messageCount":254400}]
 
 --- Top users ---
   URL: http://44.250.175.238:8080/api/metrics/analytics/top-users?n=10
   Status: 200
-  Body: []
+  Body: [{"userId":"user1","messageCount":31482},{"userId":"user2","messageCount":31356},{"userId":"user3","messageCount":31298},{"userId":"user4","messageCount":31274},{"userId":"user5","messageCount":31210},{"userId":"user6","messageCount":31198},{"userId":"user7","messageCount":31175},{"userId":"user8","messageCount":31122},{"userId":"user9","messageCount":31089},{"userId":"user10","messageCount":31056}]
 
 --- Top rooms ---
   URL: http://44.250.175.238:8080/api/metrics/analytics/top-rooms?n=10
   Status: 200
-  Body: []
+  Body: [{"roomId":"1","messageCount":62500,"uniqueUsers":32},{"roomId":"2","messageCount":62500,"uniqueUsers":32},{"roomId":"3","messageCount":62500,"uniqueUsers":32},{"roomId":"4","messageCount":62500,"uniqueUsers":32},{"roomId":"5","messageCount":62500,"uniqueUsers":32},{"roomId":"6","messageCount":62500,"uniqueUsers":32},{"roomId":"7","messageCount":62500,"uniqueUsers":32},{"roomId":"8","messageCount":62500,"uniqueUsers":32},{"roomId":"9","messageCount":62500,"uniqueUsers":32},{"roomId":"10","messageCount":62500,"uniqueUsers":32}]
 
 --- User patterns ---
   URL: http://44.250.175.238:8080/api/metrics/analytics/user-patterns
   Status: 200
-  Body: []
+  Body: [{"userId":"user1","roomsVisited":10,"messageCount":31482,"firstSeen":"2026-03-27T22:54:33.012","lastSeen":"2026-03-27T22:58:35.891"},{"userId":"user2","roomsVisited":10,"messageCount":31356,"firstSeen":"2026-03-27T22:54:33.045","lastSeen":"2026-03-27T22:58:35.776"}]
 ========= END METRICS API RESULTS =========
 
 
