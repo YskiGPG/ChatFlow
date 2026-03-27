@@ -2,6 +2,7 @@ package com.chatflow.client.config;
 
 public class ClientConfig {
     public static String SERVER_URI = "ws://localhost:8080/chat/";
+    public static String METRICS_BASE_URL = "http://localhost:8080";
     public static int TOTAL_MESSAGES = 500_000;
     public static final int WARMUP_THREADS = 32;
     public static final int WARMUP_MESSAGES_PER_THREAD = 1000;
@@ -17,12 +18,15 @@ public class ClientConfig {
     public static int MAIN_PHASE_MESSAGES;
 
     public static void init(String[] args) {
-        // Allow override: java -jar client.jar 1000
+        // Allow override: java -jar client.jar 1000 [wsUrl] [metricsBaseUrl]
         if (args.length > 0) {
             TOTAL_MESSAGES = Integer.parseInt(args[0]);
         }
         if (args.length > 1) {
             SERVER_URI = args[1];
+        }
+        if (args.length > 2) {
+            METRICS_BASE_URL = args[2];
         }
 
         // Warmup cannot exceed total

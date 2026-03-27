@@ -7,6 +7,7 @@ import com.chatflow.client.metrics.*;
 import com.chatflow.client.retry.RetryHandler;
 import com.chatflow.client.sender.MessageSender;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -16,6 +17,8 @@ public class ClientApp {
 
     public static void main(String[] args) throws Exception {
         ClientConfig.init(args);
+
+        Instant testStart = Instant.now();
 
         System.out.println("ChatFlow Load Test Client - Part 2 (with latency analysis)");
         System.out.println("===========================================================");
@@ -138,6 +141,15 @@ public class ClientApp {
         // Throughput chart
         String chartPath = "results/throughput_chart.png";
         ThroughputChartGenerator.generate(records, chartPath);
+
+        // =====================
+        // Metrics API
+        // =====================
+        Instant testEnd = Instant.now();
+        String sampleRoomId = "1";
+        String sampleUserId = "user1";
+        new MetricsApiCaller(ClientConfig.METRICS_BASE_URL)
+                .callAll(testStart, testEnd, sampleRoomId, sampleUserId, 10);
 
         System.out.println("\nDone!");
     }
