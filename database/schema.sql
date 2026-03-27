@@ -1,0 +1,2 @@
+-- ChatFlow A3 Database Schema
+-- Placeholder: full schema will be written in Phase 1
