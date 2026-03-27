@@ -1,96 +1,136 @@
 package com.chatflow.consumer;
 
+import com.chatflow.consumer.buffer.MessageBuffer;
+import com.chatflow.consumer.config.ConsumerConfig;
+import com.chatflow.consumer.db.DatabaseManager;
+import com.chatflow.consumer.db.MessageBatchWriter;
+import com.chatflow.consumer.metrics.ConsumerMetrics;
+import com.chatflow.consumer.model.QueueMessage;
+import com.chatflow.consumer.writer.DatabaseWriterPool;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.rabbitmq.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Standalone consumer application.
+ * Consumer-v3 main entry point.
  *
- * In the ChatFlow architecture, the primary consumer is embedded in each
- * server-v2 instance (see server-v2/consumer/MessageConsumer.java).
- * This standalone consumer can be used for:
- * - Monitoring message flow
- * - Running additional consumer capacity on separate EC2
- * - Testing queue behavior
+ * Pipeline:
+ *   RabbitMQ → ConsumerApp (N threads) → MessageBuffer → DatabaseWriterPool (M threads) → MySQL
  *
- * Usage: java -jar consumer.jar <rabbitmq-host> [consumer-threads]
+ * Usage:
+ *   java -jar consumer-v3.jar [key=value ...]
+ *   e.g. java -jar consumer-v3.jar rabbitmq.host=10.0.0.1 mysql.host=10.0.0.2
  */
 public class ConsumerApp {
 
     private static final Logger log = LoggerFactory.getLogger(ConsumerApp.class);
+
     private static final String EXCHANGE_NAME = "chat.exchange";
+    private static final String QUEUE_NAME    = "consumer-v3-db-queue";
+    private static final String ROUTING_KEY   = "room.*";
+
     private static final Gson gson = new Gson();
 
-    // Metrics
-    private static final AtomicLong totalConsumed = new AtomicLong(0);
-    private static final ConcurrentHashMap<String, AtomicLong> roomCounts = new ConcurrentHashMap<>();
+    public static void main(String[] args) throws Exception {
+        ConsumerConfig config = ConsumerConfig.load(args);
+        log.info("Starting Consumer-v3 with {}", config);
 
-    public static void main(String[] args) throws IOException, TimeoutException, InterruptedException {
-        String host = args.length > 0 ? args[0] : "localhost";
-        int numThreads = args.length > 1 ? Integer.parseInt(args[1]) : 10;
+        // --- Infrastructure ---
+        DatabaseManager  dbManager   = new DatabaseManager(config);
+        MessageBatchWriter batchWriter = new MessageBatchWriter(dbManager);
+        ConsumerMetrics  metrics     = new ConsumerMetrics();
+        DatabaseWriterPool writerPool = new DatabaseWriterPool(config.getWriterThreads(), batchWriter);
 
-        System.out.println("ChatFlow Standalone Consumer");
-        System.out.println("============================");
-        System.out.printf("RabbitMQ host: %s%n", host);
-        System.out.printf("Consumer threads: %d%n", numThreads);
+        MessageBuffer buffer = new MessageBuffer(
+            config.getBatchSize(),
+            config.getFlushIntervalMs(),
+            batch -> {
+                metrics.incrementBatches();
+                writerPool.submit(batch);
+            }
+        );
 
+        // --- RabbitMQ connection ---
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(host);
+        factory.setHost(config.getRabbitHost());
+        factory.setPort(config.getRabbitPort());
+        factory.setUsername(config.getRabbitUser());
+        factory.setPassword(config.getRabbitPassword());
+        factory.setVirtualHost(config.getRabbitVhost());
         factory.setAutomaticRecoveryEnabled(true);
-        Connection connection = factory.newConnection();
+        factory.setNetworkRecoveryInterval(5_000);
 
-        // Declare exchange (idempotent)
+        Connection connection = factory.newConnection("consumer-v3");
+
+        // Declare durable queue (idempotent)
         Channel setupChannel = connection.createChannel();
         setupChannel.exchangeDeclare(EXCHANGE_NAME, "topic", true);
+        setupChannel.queueDeclare(QUEUE_NAME, true, false, false, null);
+        setupChannel.queueBind(QUEUE_NAME, EXCHANGE_NAME, ROUTING_KEY);
+        setupChannel.close();
+        log.info("Queue '{}' declared and bound to exchange '{}'", QUEUE_NAME, EXCHANGE_NAME);
 
-        // Start consumer threads, each with its own channel and queue
-        for (int i = 0; i < numThreads; i++) {
-            final int threadId = i;
+        // --- Start consumer threads ---
+        List<Channel> channels = new ArrayList<>();
+        for (int i = 0; i < config.getConsumerThreads(); i++) {
             Channel channel = connection.createChannel();
-            channel.basicQos(64);
-
-            // Each thread gets its own exclusive queue
-            String queueName = "consumer-standalone-" + threadId;
-            channel.queueDeclare(queueName, false, false, true, null);
-            channel.queueBind(queueName, EXCHANGE_NAME, "room.*");
+            channel.basicQos(config.getPrefetchCount());
+            channels.add(channel);
 
             DeliverCallback callback = (consumerTag, delivery) -> {
                 try {
                     String json = new String(delivery.getBody());
-                    JsonObject msg = gson.fromJson(json, JsonObject.class);
-                    String roomId = msg.has("roomId") ? msg.get("roomId").getAsString() : "unknown";
+                    QueueMessage msg = gson.fromJson(json, QueueMessage.class);
+                    msg.setDeliveryTag(delivery.getEnvelope().getDeliveryTag());
+                    msg.setChannel(channel);
 
-                    totalConsumed.incrementAndGet();
-                    roomCounts.computeIfAbsent(roomId, k -> new AtomicLong(0)).incrementAndGet();
-
-                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                    metrics.incrementConsumed();
+                    buffer.add(msg);
                 } catch (Exception e) {
-                    log.error("Error processing: {}", e.getMessage());
-                    channel.basicNack(delivery.getEnvelope().getDeliveryTag(), false, true);
+                    log.error("Failed to parse message: {}", e.getMessage());
+                    channel.basicNack(delivery.getEnvelope().getDeliveryTag(), false, false);
                 }
             };
 
-            channel.basicConsume(queueName, false, callback, consumerTag -> {});
-            log.info("Consumer thread {} started on queue {}", threadId, queueName);
+            channel.basicConsume(QUEUE_NAME, false, callback, consumerTag -> {});
+            log.info("Consumer thread {} started", i);
         }
 
-        setupChannel.close();
+        // --- Graceful shutdown hook ---
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Shutdown signal received — draining pipeline...");
 
-        // Metrics reporting loop
-        System.out.println("\nConsumer running. Press Ctrl+C to stop.\n");
-        while (true) {
-            Thread.sleep(10_000);
-            long total = totalConsumed.get();
-            System.out.printf("[Metrics] Total consumed: %d | Rooms: %s%n", total, roomCounts);
-        }
+            // 1. Stop timed flushes and drain buffer
+            buffer.shutdown();
+            List<QueueMessage> remaining = buffer.drainAll();
+            if (!remaining.isEmpty()) {
+                log.info("Flushing {} remaining messages from buffer", remaining.size());
+                writerPool.writeSync(remaining);
+            }
+
+            // 2. Wait for writer pool to finish in-flight batches
+            writerPool.shutdown();
+
+            // 3. Close HikariCP pool
+            dbManager.shutdown();
+
+            // 4. Close RabbitMQ channels and connection
+            for (Channel ch : channels) {
+                try { if (ch.isOpen()) ch.close(); } catch (Exception ignored) {}
+            }
+            try { connection.close(); } catch (Exception ignored) {}
+
+            // 5. Final metrics snapshot
+            metrics.shutdown();
+            log.info("Consumer-v3 shutdown complete.");
+        }, "shutdown-hook"));
+
+        log.info("Consumer-v3 running. Consuming from '{}'. Press Ctrl+C to stop.", QUEUE_NAME);
     }
 }
