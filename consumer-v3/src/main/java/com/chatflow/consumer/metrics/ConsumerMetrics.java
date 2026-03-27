@@ -52,8 +52,8 @@ public class ConsumerMetrics {
         long batches   = batchesExecuted.get();
         double tps     = uptimeSec > 0 ? (double) consumed / uptimeSec : 0;
 
-        log.info("[Metrics] uptime={}s consumed={} written={} failed={} batches={} tps={:.1f}",
-            uptimeSec, consumed, written, failed, batches, tps);
+        log.info("[Metrics] uptime={}s consumed={} written={} failed={} batches={} tps={}",
+            uptimeSec, consumed, written, failed, batches, String.format("%.1f", tps));
     }
 
     public void shutdown() {

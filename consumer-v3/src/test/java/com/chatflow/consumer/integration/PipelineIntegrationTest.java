@@ -71,7 +71,7 @@ class PipelineIntegrationTest {
         }
 
         batchWriter = new MessageBatchWriter(dbManager);
-        writerPool  = new DatabaseWriterPool(2, batchWriter);
+        writerPool  = new DatabaseWriterPool(2, batchWriter, new com.chatflow.consumer.metrics.ConsumerMetrics());
 
         buffer = new MessageBuffer(50, 500, batch -> writerPool.submit(batch));
 

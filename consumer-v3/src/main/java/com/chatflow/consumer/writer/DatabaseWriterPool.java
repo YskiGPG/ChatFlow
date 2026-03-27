@@ -32,7 +32,11 @@ public class DatabaseWriterPool {
     private final AtomicLong messagesWritten  = new AtomicLong(0);
     private final AtomicLong messagesFailed   = new AtomicLong(0);
 
-    public DatabaseWriterPool(int writerThreads, MessageBatchWriter batchWriter) {
+    private final com.chatflow.consumer.metrics.ConsumerMetrics metrics;
+
+    public DatabaseWriterPool(int writerThreads, MessageBatchWriter batchWriter,
+                              com.chatflow.consumer.metrics.ConsumerMetrics metrics) {
+        this.metrics = metrics;
         this.batchWriter = batchWriter;
         this.pool = Executors.newFixedThreadPool(writerThreads, r -> {
             Thread t = new Thread(r, "db-writer-" + writerThreads);
@@ -84,6 +88,7 @@ public class DatabaseWriterPool {
                 int written = batchWriter.writeBatch(batch);
                 messagesWritten.addAndGet(written);
                 batchesExecuted.incrementAndGet();
+                metrics.addWritten(written);
                 ackAll(batch);
                 return;
             } catch (SQLException e) {

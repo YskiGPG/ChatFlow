@@ -45,7 +45,7 @@ public class ConsumerApp {
         DatabaseManager  dbManager   = new DatabaseManager(config);
         MessageBatchWriter batchWriter = new MessageBatchWriter(dbManager);
         ConsumerMetrics  metrics     = new ConsumerMetrics();
-        DatabaseWriterPool writerPool = new DatabaseWriterPool(config.getWriterThreads(), batchWriter);
+        DatabaseWriterPool writerPool = new DatabaseWriterPool(config.getWriterThreads(), batchWriter, metrics);
 
         MessageBuffer buffer = new MessageBuffer(
             config.getBatchSize(),
