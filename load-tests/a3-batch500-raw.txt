@@ -1,0 +1,55 @@
+ChatFlow Load Test Client - Part 2 (with latency analysis)
+===========================================================
+Total messages: 500000
+Warmup: 32 threads, 32000 messages total
+Main phase: 32 threads, 468000 messages
+
+Starting warmup phase...
+SLF4J: No SLF4J providers were found.
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See https://www.slf4j.org/codes.html#noProviders for further details.
+Warmup phase complete.
+========================================
+         PERFORMANCE REPORT             
+========================================
+Successful messages: 32000
+Failed messages:     0
+Total runtime:       7.53 seconds
+Throughput:          4251.93 messages/sec
+Total connections:   32
+Reconnections:       0
+========================================
+
+Starting main phase...
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/1
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/7
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/11
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/9
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/16
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/20
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/18
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/12
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/12
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/7
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/3
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/9
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/5
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/6
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/14
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/15
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/17
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/1
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/2
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/8
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/5
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/8
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/10
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/3
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/13
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/6
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/2
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/11
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/4
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/10
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/4
+Sender error: Failed to connect to ws://44.250.175.238:8080/chat/19
